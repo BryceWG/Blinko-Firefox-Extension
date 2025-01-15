@@ -211,7 +211,9 @@ async function fetchAiConfig() {
         const response = await fetch(configUrl, {
             method: 'GET',
             headers: {
-                'Authorization': authKey
+                'Authorization': `Bearer ${authKey}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
             }
         });
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Blinko网页内容提取总结",
-  "version": "2.1.2",
+  "version": "2.0.6",
   "description": "划词保存、提取网页内容并生成总结",
   "permissions": [
     "activeTab",
@@ -48,8 +48,7 @@
       "images/icon128_success.png",
       "images/icon128_success_reverse.png"
     ],
-    "matches": ["<all_urls>"],
-    "use_dynamic_url": true
+    "matches": ["<all_urls>"]
   }],
   "icons": {
     "128": "images/icon128.png"

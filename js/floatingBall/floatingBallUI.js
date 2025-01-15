@@ -71,12 +71,25 @@ function createFloatingBallStyle() {
 function createFloatingBallElement() {
     const ball = document.createElement('div');
     ball.id = 'blinko-floating-ball';
-    ball.innerHTML = `
-        <div class="ball-icon">
-            <img src="${chrome.runtime.getURL('images/icon128.png')}" alt="Blinko">
-        </div>
-        <div class="loading-circle"></div>
-    `;
+    
+    // 创建图标容器
+    const ballIcon = document.createElement('div');
+    ballIcon.className = 'ball-icon';
+    
+    // 创建图标
+    const img = document.createElement('img');
+    img.src = chrome.runtime.getURL('images/icon128.png');
+    img.alt = 'Blinko';
+    ballIcon.appendChild(img);
+    
+    // 创建加载圈
+    const loadingCircle = document.createElement('div');
+    loadingCircle.className = 'loading-circle';
+    
+    // 添加所有元素
+    ball.appendChild(ballIcon);
+    ball.appendChild(loadingCircle);
+    
     return ball;
 }
 

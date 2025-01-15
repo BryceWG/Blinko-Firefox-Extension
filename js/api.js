@@ -118,6 +118,13 @@ async function sendToBlinko(content, url, title, imageAttachment = null, type = 
         const baseUrl = settings.targetUrl.replace(/\/+$/, '');
         const requestUrl = `${baseUrl}/note/upsert`;
 
+        // 设置请求头
+        const headers = {
+            'Authorization': `Bearer ${settings.authKey}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        };
+
         // 根据不同类型添加不同的标签和URL
         let finalContent = content;
         
@@ -148,7 +155,7 @@ async function sendToBlinko(content, url, title, imageAttachment = null, type = 
         // 构建请求体
         const requestBody = {
             content: finalContent,
-            type: 0
+            tags: tags
         };
 
         // 如果有图片附件，添加到请求中
@@ -159,19 +166,15 @@ async function sendToBlinko(content, url, title, imageAttachment = null, type = 
         // 发送请求
         const response = await fetch(requestUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': settings.authKey
-            },
+            headers: headers,
             body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
-            throw new Error(`保存失败: ${response.status}`);
+            throw new Error(`发送到Blinko失败: ${response.status}`);
         }
 
-        const data = await response.json();
-        return { success: true, data };
+        return await response.json();
     } catch (error) {
         console.error('发送到Blinko失败:', error);
         return { success: false, error: error.message };
