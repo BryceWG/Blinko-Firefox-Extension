@@ -32,6 +32,8 @@ async function getSummaryFromModel(content, settings) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${settings.apiKey}`
             },
+            mode: 'cors',
+            credentials: 'omit',
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{
@@ -79,6 +81,8 @@ async function uploadFile(file, settings) {
             headers: {
                 'Authorization': settings.authKey
             },
+            mode: 'cors',
+            credentials: 'omit',
             body: formData
         });
 
@@ -144,19 +148,27 @@ async function sendToBlinko(content, url, title, imageAttachment = null, type = 
         }
 
         // 添加标签
+        let tags = [];
         if (type === 'summary' && settings.summaryTag) {
             finalContent = `${finalContent}\n\n${settings.summaryTag}`;
+            tags.push(settings.summaryTag.replace('#', ''));
         } else if (type === 'extract' && settings.extractTag) {
             finalContent = `${finalContent}\n\n${settings.extractTag}`;
+            tags.push(settings.extractTag.replace('#', ''));
         } else if (type === 'image' && settings.imageTag) {
             finalContent = finalContent ? `${finalContent}\n\n${settings.imageTag}` : settings.imageTag;
+            tags.push(settings.imageTag.replace('#', ''));
         }
 
         // 构建请求体
         const requestBody = {
-            content: finalContent,
-            tags: tags
+            content: finalContent
         };
+
+        // 如果有标签，添加到请求体中
+        if (tags.length > 0) {
+            requestBody.tags = tags;
+        }
 
         // 如果有图片附件，添加到请求中
         if (imageAttachment) {
@@ -167,17 +179,28 @@ async function sendToBlinko(content, url, title, imageAttachment = null, type = 
         const response = await fetch(requestUrl, {
             method: 'POST',
             headers: headers,
+            mode: 'cors',
+            credentials: 'omit',
             body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
-            throw new Error(`发送到Blinko失败: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP错误: ${response.status}`);
         }
 
-        return await response.json();
+        const responseData = await response.json();
+        return {
+            success: true,
+            data: responseData
+        };
     } catch (error) {
         console.error('发送到Blinko失败:', error);
-        return { success: false, error: error.message };
+        return {
+            success: false,
+            error: error.message,
+            status: error.status || 500
+        };
     }
 }
 

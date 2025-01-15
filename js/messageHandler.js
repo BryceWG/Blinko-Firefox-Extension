@@ -215,18 +215,20 @@ async function handleSaveSummary(request) {
                     await chrome.storage.local.remove('currentSummary');
                     await clearSummaryState();
                 }
-                return { success: true };
+                return { success: true, data: response.data };
             } else {
-                throw new Error(`保存失败: ${response.status}`);
+                throw new Error(response.error || '保存失败');
             }
         } catch (error) {
+            console.error('发送内容失败:', error);
             throw new Error(`发送内容失败: ${error.message}`);
         }
     } catch (error) {
         console.error('保存内容时出错:', error);
         return { 
             success: false, 
-            error: error.message 
+            error: error.message,
+            status: error.status || 500
         };
     }
 }
