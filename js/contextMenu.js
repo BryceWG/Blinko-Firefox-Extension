@@ -20,6 +20,14 @@ function initializeContextMenu() {
             parentId: "blinkoExtension"
         });
 
+        // 添加预存到快捷记录菜单
+        chrome.contextMenus.create({
+            id: "saveToQuickNote",
+            title: "预存到快捷记录",
+            contexts: ["selection"],
+            parentId: "blinkoExtension"
+        });
+
         // 创建图片右键菜单
         chrome.contextMenus.create({
             id: 'saveImageToBlinko',
@@ -86,6 +94,39 @@ async function handleContextMenuClick(info, tab) {
                 type: 'basic',
                 iconUrl: 'images/icon128.png',
                 title: '发送失败',
+                message: error.message
+            });
+        }
+    }
+
+    if (info.menuItemId === "saveToQuickNote") {
+        try {
+            // 获取当前快捷记录内容
+            const result = await chrome.storage.local.get('quickNote');
+            let currentContent = result.quickNote || '';
+            
+            // 添加新的选中内容
+            if (currentContent) {
+                currentContent += '\n\n'; // 如果已有内容，添加两个换行符
+            }
+            currentContent += info.selectionText.trim();
+            
+            // 保存更新后的内容
+            await chrome.storage.local.set({ 'quickNote': currentContent });
+            
+            // 显示成功通知
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'images/icon128.png',
+                title: '已添加到快捷记录',
+                message: '选中的文本已添加到快捷记录中'
+            });
+        } catch (error) {
+            console.error('保存到快捷记录失败:', error);
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'images/icon128.png',
+                title: '保存失败',
                 message: error.message
             });
         }

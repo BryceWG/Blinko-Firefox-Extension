@@ -1,11 +1,10 @@
 // 临时存储键
 const TEMP_STORAGE_KEY = 'tempSummaryData';
-const QUICK_NOTE_KEY = 'quickNoteData';  // 快捷记录的存储键
 
 // 保存临时总结数据
 async function saveTempSummaryData(data) {
     try {
-        await chrome.storage.local.set({ [TEMP_STORAGE_KEY]: data });
+        await browser.storage.local.set({ [TEMP_STORAGE_KEY]: data });
         console.log('临时数据已保存:', data);
     } catch (error) {
         console.error('保存临时数据失败:', error);
@@ -15,7 +14,7 @@ async function saveTempSummaryData(data) {
 // 清除临时总结数据
 async function clearTempSummaryData() {
     try {
-        await chrome.storage.local.remove(TEMP_STORAGE_KEY);
+        await browser.storage.local.remove(TEMP_STORAGE_KEY);
         console.log('临时数据已清除');
     } catch (error) {
         console.error('清除临时数据失败:', error);
@@ -25,7 +24,7 @@ async function clearTempSummaryData() {
 // 加载临时总结数据
 async function loadTempSummaryData() {
     try {
-        const result = await chrome.storage.local.get(TEMP_STORAGE_KEY);
+        const result = await browser.storage.local.get(TEMP_STORAGE_KEY);
         return result[TEMP_STORAGE_KEY];
     } catch (error) {
         console.error('加载临时数据失败:', error);
@@ -35,7 +34,6 @@ async function loadTempSummaryData() {
 
 export {
     TEMP_STORAGE_KEY,
-    QUICK_NOTE_KEY,
     saveTempSummaryData,
     clearTempSummaryData,
     loadTempSummaryData
