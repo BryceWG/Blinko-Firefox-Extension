@@ -7,7 +7,7 @@ import { checkSummaryState, initializeSummaryListeners, handleSummaryResponse } 
 document.addEventListener('DOMContentLoaded', async function() {
     try {
         // 检查是否是通过通知点击打开的
-        const result = await browser.storage.local.get(['notificationClicked', 'notificationTabId', 'quickNote']);
+        const result = await browser.storage.local.get(['notificationClicked', 'notificationTabId', 'quickNote', 'quickNoteAttachments']);
         
         // 加载设置
         await loadSettings();
@@ -28,8 +28,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 await browser.storage.local.remove(['notificationClicked', 'notificationTabId']);
                 defaultTab = 'quicknote';
             }
-        } else if (result.quickNote && result.quickNote.trim()) {
-            // 如果快捷记录有内容，显示快捷记录标签页
+        } else if ((result.quickNote && result.quickNote.trim()) || 
+                  (result.quickNoteAttachments && result.quickNoteAttachments.length > 0)) {
+            // 如果快捷记录有内容或有附件，显示快捷记录标签页
             defaultTab = 'quicknote';
         }
 
