@@ -166,7 +166,7 @@ async function handleSaveSummary(request) {
         }
 
         // 获取存储的设置
-        const result = await chrome.storage.sync.get('settings');
+        const result = await browser.storage.sync.get('settings');
         const settings = result.settings;
         
         if (!settings) {
@@ -187,6 +187,29 @@ async function handleSaveSummary(request) {
             if (settings.includeQuickNoteUrl && request.url) {
                 finalContent = `${finalContent}\n\n原文链接：[${request.title || request.url}](${request.url})`;
             }
+
+            try {
+                const response = await sendToBlinko(
+                    finalContent,
+                    url,
+                    title,
+                    request.attachments,  // 传递附件列表
+                    request.type || 'summary'
+                );
+                
+                if (response.success) {
+                    // 如果是总结内容，清除存储
+                    if (!request.type || request.type !== 'quickNote') {
+                        await browser.storage.local.remove('currentSummary');
+                        await clearSummaryState();
+                    }
+                    return { success: true };
+                } else {
+                    throw new Error(`保存失败: ${response.status}`);
+                }
+            } catch (error) {
+                throw new Error(`发送内容失败: ${error.message}`);
+            }
         } else {
             // 如果是总结内容或提取内容
             if (!request.content || !request.content.trim()) {
@@ -196,7 +219,7 @@ async function handleSaveSummary(request) {
 
             // 如果没有提供URL和标题，尝试从currentSummary获取
             if (!url || !title) {
-                const currentSummary = await chrome.storage.local.get('currentSummary');
+                const currentSummary = await browser.storage.local.get('currentSummary');
                 if (currentSummary.currentSummary) {
                     url = url || currentSummary.currentSummary.url;
                     title = title || currentSummary.currentSummary.title;
@@ -216,23 +239,21 @@ async function handleSaveSummary(request) {
             if (response.success) {
                 // 如果是总结内容，清除存储
                 if (!request.type || request.type !== 'quickNote') {
-                    await chrome.storage.local.remove('currentSummary');
+                    await browser.storage.local.remove('currentSummary');
                     await clearSummaryState();
                 }
-                return { success: true, data: response.data };
+                return { success: true };
             } else {
-                throw new Error(response.error || '保存失败');
+                throw new Error(`保存失败: ${response.status}`);
             }
         } catch (error) {
-            console.error('发送内容失败:', error);
             throw new Error(`发送内容失败: ${error.message}`);
         }
     } catch (error) {
         console.error('保存内容时出错:', error);
         return { 
             success: false, 
-            error: error.message,
-            status: error.status || 500
+            error: error.message 
         };
     }
 }

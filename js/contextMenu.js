@@ -4,53 +4,59 @@ import { handleContentRequest } from './messageHandler.js';
 
 // 初始化右键菜单
 function initializeContextMenu() {
-    chrome.runtime.onInstalled.addListener(() => {
-        // 创建父级菜单
-        chrome.contextMenus.create({
-            id: "blinkoExtension",
-            title: "Blinko Extension",
-            contexts: ["all"]
-        });
+    // 创建父级菜单
+    browser.contextMenus.create({
+        id: "blinkoExtension",
+        title: "Blinko Extension",
+        contexts: ["all"]
+    });
 
-        // 创建选中文本菜单
-        chrome.contextMenus.create({
-            id: "sendSelectedText",
-            title: "发送选中文本到Blinko",
-            contexts: ["selection"],
-            parentId: "blinkoExtension"
-        });
+    // 创建选中文本菜单
+    browser.contextMenus.create({
+        id: "sendSelectedText",
+        title: "发送选中文本到Blinko",
+        contexts: ["selection"],
+        parentId: "blinkoExtension"
+    });
 
-        // 添加预存到快捷记录菜单
-        chrome.contextMenus.create({
-            id: "saveToQuickNote",
-            title: "预存到快捷记录",
-            contexts: ["selection"],
-            parentId: "blinkoExtension"
-        });
+    // 添加预存到快捷记录菜单（文本）
+    browser.contextMenus.create({
+        id: "saveToQuickNote",
+        title: "预存到快捷记录",
+        contexts: ["selection"],
+        parentId: "blinkoExtension"
+    });
 
-        // 创建图片右键菜单
-        chrome.contextMenus.create({
-            id: 'saveImageToBlinko',
-            title: '保存图片到Blinko',
-            contexts: ['image'],
-            parentId: "blinkoExtension"
-        });
+    // 添加预存到快捷记录菜单（图片）
+    browser.contextMenus.create({
+        id: "saveImageToQuickNote",
+        title: "预存到快捷记录",
+        contexts: ["image"],
+        parentId: "blinkoExtension"
+    });
 
-        // 创建总结网页内容菜单
-        chrome.contextMenus.create({
-            id: 'summarizePageContent',
-            title: '总结网页内容',
-            contexts: ['page'],
-            parentId: "blinkoExtension"
-        });
+    // 创建图片右键菜单
+    browser.contextMenus.create({
+        id: 'saveImageToBlinko',
+        title: '保存图片到Blinko',
+        contexts: ['image'],
+        parentId: "blinkoExtension"
+    });
 
-        // 创建提取网页内容菜单
-        chrome.contextMenus.create({
-            id: 'extractPageContent',
-            title: '提取网页内容',
-            contexts: ['page'],
-            parentId: "blinkoExtension"
-        });
+    // 创建总结网页内容菜单
+    browser.contextMenus.create({
+        id: 'summarizePageContent',
+        title: '总结网页内容',
+        contexts: ['page'],
+        parentId: "blinkoExtension"
+    });
+
+    // 创建提取网页内容菜单
+    browser.contextMenus.create({
+        id: 'extractPageContent',
+        title: '提取网页内容',
+        contexts: ['page'],
+        parentId: "blinkoExtension"
     });
 }
 
@@ -58,7 +64,7 @@ function initializeContextMenu() {
 async function handleContextMenuClick(info, tab) {
     if (info.menuItemId === "sendSelectedText") {
         try {
-            const result = await chrome.storage.sync.get('settings');
+            const result = await browser.storage.sync.get('settings');
             const settings = result.settings;
             
             if (!settings) {
@@ -79,7 +85,7 @@ async function handleContextMenuClick(info, tab) {
             
             if (response.success) {
                 showSuccessIcon();
-                chrome.notifications.create({
+                browser.notifications.create({
                     type: 'basic',
                     iconUrl: 'images/icon128.png',
                     title: '发送成功',
@@ -90,7 +96,7 @@ async function handleContextMenuClick(info, tab) {
             }
         } catch (error) {
             console.error('发送选中文本失败:', error);
-            chrome.notifications.create({
+            browser.notifications.create({
                 type: 'basic',
                 iconUrl: 'images/icon128.png',
                 title: '发送失败',
@@ -102,7 +108,7 @@ async function handleContextMenuClick(info, tab) {
     if (info.menuItemId === "saveToQuickNote") {
         try {
             // 获取当前快捷记录内容
-            const result = await chrome.storage.local.get('quickNote');
+            const result = await browser.storage.local.get('quickNote');
             let currentContent = result.quickNote || '';
             
             // 添加新的选中内容
@@ -112,10 +118,10 @@ async function handleContextMenuClick(info, tab) {
             currentContent += info.selectionText.trim();
             
             // 保存更新后的内容
-            await chrome.storage.local.set({ 'quickNote': currentContent });
+            await browser.storage.local.set({ 'quickNote': currentContent });
             
             // 显示成功通知
-            chrome.notifications.create({
+            browser.notifications.create({
                 type: 'basic',
                 iconUrl: 'images/icon128.png',
                 title: '已添加到快捷记录',
@@ -123,7 +129,48 @@ async function handleContextMenuClick(info, tab) {
             });
         } catch (error) {
             console.error('保存到快捷记录失败:', error);
-            chrome.notifications.create({
+            browser.notifications.create({
+                type: 'basic',
+                iconUrl: 'images/icon128.png',
+                title: '保存失败',
+                message: error.message
+            });
+        }
+    }
+
+    if (info.menuItemId === "saveImageToQuickNote") {
+        try {
+            // 获取设置
+            const result = await browser.storage.sync.get('settings');
+            const settings = result.settings;
+            
+            if (!settings) {
+                throw new Error('未找到设置信息');
+            }
+
+            // 直接使用图片URL上传
+            const imageAttachment = await uploadFile(info.srcUrl, settings);
+
+            // 获取当前快捷记录的附件列表
+            const quickNoteResult = await browser.storage.local.get(['quickNoteAttachments']);
+            let attachments = quickNoteResult.quickNoteAttachments || [];
+
+            // 添加新的附件
+            attachments.push(imageAttachment);
+
+            // 保存更新后的附件列表
+            await browser.storage.local.set({ 'quickNoteAttachments': attachments });
+            
+            // 显示成功通知
+            browser.notifications.create({
+                type: 'basic',
+                iconUrl: 'images/icon128.png',
+                title: '已添加到快捷记录',
+                message: '图片已添加到快捷记录中'
+            });
+        } catch (error) {
+            console.error('保存图片到快捷记录失败:', error);
+            browser.notifications.create({
                 type: 'basic',
                 iconUrl: 'images/icon128.png',
                 title: '保存失败',
@@ -135,7 +182,7 @@ async function handleContextMenuClick(info, tab) {
     if (info.menuItemId === 'saveImageToBlinko') {
         try {
             // 获取设置
-            const result = await chrome.storage.sync.get('settings');
+            const result = await browser.storage.sync.get('settings');
             const settings = result.settings;
             
             if (!settings) {
@@ -151,7 +198,7 @@ async function handleContextMenuClick(info, tab) {
             if (response.success) {
                 // 通知用户保存成功
                 showSuccessIcon();
-                chrome.notifications.create({
+                browser.notifications.create({
                     type: 'basic',
                     iconUrl: 'images/icon128.png',
                     title: '保存成功',
@@ -162,7 +209,7 @@ async function handleContextMenuClick(info, tab) {
             }
         } catch (error) {
             console.error('保存图片失败:', error);
-            chrome.notifications.create({
+            browser.notifications.create({
                 type: 'basic',
                 iconUrl: 'images/icon128.png',
                 title: '保存失败',
@@ -175,7 +222,7 @@ async function handleContextMenuClick(info, tab) {
     if (info.menuItemId === 'summarizePageContent' || info.menuItemId === 'extractPageContent') {
         try {
             // 获取页面内容
-            const response = await chrome.tabs.sendMessage(tab.id, {
+            const response = await browser.tabs.sendMessage(tab.id, {
                 action: 'getContent'
             });
 
@@ -195,7 +242,7 @@ async function handleContextMenuClick(info, tab) {
             // 成功通知会在handleContentRequest中处理
         } catch (error) {
             console.error('处理网页内容失败:', error);
-            chrome.notifications.create({
+            browser.notifications.create({
                 type: 'basic',
                 iconUrl: 'images/icon128.png',
                 title: info.menuItemId === 'summarizePageContent' ? '总结失败' : '提取失败',

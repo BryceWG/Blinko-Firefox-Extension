@@ -111,7 +111,7 @@ async function uploadFile(imageUrl, settings) {
 async function sendToBlinko(content, url, title, imageAttachment = null, type = 'summary') {
     try {
         // 获取设置
-        const result = await chrome.storage.sync.get('settings');
+        const result = await browser.storage.sync.get('settings');
         const settings = result.settings;
         
         if (!settings || !settings.targetUrl || !settings.authKey) {
@@ -136,7 +136,8 @@ async function sendToBlinko(content, url, title, imageAttachment = null, type = 
         if (url && (
             (type === 'summary' && settings.includeSummaryUrl) ||
             (type === 'extract' && settings.includeSelectionUrl) ||
-            (type === 'image' && settings.includeImageUrl)
+            (type === 'image' && settings.includeImageUrl) ||
+            (type === 'quickNote' && settings.includeQuickNoteUrl)
         )) {
             // 对于图片类型，使用不同的链接格式
             if (type === 'image') {
@@ -148,30 +149,26 @@ async function sendToBlinko(content, url, title, imageAttachment = null, type = 
         }
 
         // 添加标签
-        let tags = [];
         if (type === 'summary' && settings.summaryTag) {
             finalContent = `${finalContent}\n\n${settings.summaryTag}`;
-            tags.push(settings.summaryTag.replace('#', ''));
         } else if (type === 'extract' && settings.extractTag) {
             finalContent = `${finalContent}\n\n${settings.extractTag}`;
-            tags.push(settings.extractTag.replace('#', ''));
         } else if (type === 'image' && settings.imageTag) {
             finalContent = finalContent ? `${finalContent}\n\n${settings.imageTag}` : settings.imageTag;
-            tags.push(settings.imageTag.replace('#', ''));
         }
 
         // 构建请求体
         const requestBody = {
-            content: finalContent
+            content: finalContent,
+            type: 0
         };
 
-        // 如果有标签，添加到请求体中
-        if (tags.length > 0) {
-            requestBody.tags = tags;
-        }
-
-        // 如果有图片附件，添加到请求中
-        if (imageAttachment) {
+        // 处理附件
+        if (Array.isArray(imageAttachment)) {
+            // 如果是数组，直接使用
+            requestBody.attachments = imageAttachment;
+        } else if (imageAttachment) {
+            // 如果是单个附件，转换为数组
             requestBody.attachments = [imageAttachment];
         }
 
@@ -184,23 +181,19 @@ async function sendToBlinko(content, url, title, imageAttachment = null, type = 
             body: JSON.stringify(requestBody)
         });
 
+        const data = await response.json();
+
+        // 检查HTTP状态码
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `HTTP错误: ${response.status}`);
+            throw new Error(`HTTP错误: ${response.status} ${data.message || response.statusText}`);
         }
 
-        const responseData = await response.json();
-        return {
-            success: true,
-            data: responseData
-        };
+        // 如果能解析响应数据，就认为请求成功了
+        // Blinko API 在成功时可能不会返回特定的状态字段
+        return { success: true, data };
     } catch (error) {
         console.error('发送到Blinko失败:', error);
-        return {
-            success: false,
-            error: error.message,
-            status: error.status || 500
-        };
+        return { success: false, error: error.message };
     }
 }
 
