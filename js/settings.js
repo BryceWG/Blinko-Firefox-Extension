@@ -28,6 +28,7 @@ const defaultSettings = {
     includeSummaryUrl: true,    // 总结笔记是否包含URL
     includeSelectionUrl: true,  // 划词保存是否包含URL
     includeImageUrl: true,      // 图片保存是否包含URL
+    includeQuickNoteUrl: false, // 快捷记录是否包含URL
     summaryTag: '#网页/总结',   // 网页总结的标签
     selectionTag: '#网页/摘录',  // 划词保存的标签
     imageTag: '#网页/图片',     // 图片保存的标签
@@ -41,7 +42,7 @@ const defaultSettings = {
 // 加载设置
 async function loadSettings() {
     try {
-        const result = await chrome.storage.sync.get('settings');
+        const result = await browser.storage.sync.get('settings');
         let settings = result.settings;
         
         // 如果没有保存的设置，使用默认值
@@ -55,6 +56,7 @@ async function loadSettings() {
             settings.includeSummaryUrl = settings.includeSummaryUrl !== undefined ? settings.includeSummaryUrl : defaultSettings.includeSummaryUrl;
             settings.includeSelectionUrl = settings.includeSelectionUrl !== undefined ? settings.includeSelectionUrl : defaultSettings.includeSelectionUrl;
             settings.includeImageUrl = settings.includeImageUrl !== undefined ? settings.includeImageUrl : defaultSettings.includeImageUrl;
+            settings.includeQuickNoteUrl = settings.includeQuickNoteUrl !== undefined ? settings.includeQuickNoteUrl : defaultSettings.includeQuickNoteUrl;
             settings.enableFloatingBall = settings.enableFloatingBall !== undefined ? settings.enableFloatingBall : defaultSettings.enableFloatingBall;
             settings.jinaApiKey = settings.jinaApiKey || defaultSettings.jinaApiKey;
             settings.useJinaApiKey = settings.useJinaApiKey !== undefined ? settings.useJinaApiKey : defaultSettings.useJinaApiKey;
@@ -77,6 +79,7 @@ async function loadSettings() {
             'includeSummaryUrl': settings.includeSummaryUrl !== false,
             'includeSelectionUrl': settings.includeSelectionUrl !== false,
             'includeImageUrl': settings.includeImageUrl !== false,
+            'includeQuickNoteUrl': settings.includeQuickNoteUrl !== false,
             'summaryTag': settings.summaryTag || '',
             'selectionTag': settings.selectionTag || '',
             'imageTag': settings.imageTag || '',
@@ -121,6 +124,7 @@ async function saveSettings() {
             includeSummaryUrl: document.getElementById('includeSummaryUrl').checked,
             includeSelectionUrl: document.getElementById('includeSelectionUrl').checked,
             includeImageUrl: document.getElementById('includeImageUrl').checked,
+            includeQuickNoteUrl: document.getElementById('includeQuickNoteUrl').checked,
             summaryTag: document.getElementById('summaryTag').value,  // 不使用trim()，允许空值
             selectionTag: document.getElementById('selectionTag').value,  // 不使用trim()，允许空值
             imageTag: document.getElementById('imageTag').value,  // 不使用trim()，允许空值
@@ -131,14 +135,14 @@ async function saveSettings() {
             extractTag: document.getElementById('extractTag').value  // 不使用trim()，允许空值
         };
 
-        // 保存到chrome.storage
-        await chrome.storage.sync.set({ settings });
+        // 保存到browser.storage
+        await browser.storage.sync.set({ settings });
         
         // 通知所有标签页更新悬浮球状态
-        const tabs = await chrome.tabs.query({});
+        const tabs = await browser.tabs.query({});
         for (const tab of tabs) {
             try {
-                await chrome.tabs.sendMessage(tab.id, {
+                await browser.tabs.sendMessage(tab.id, {
                     action: 'updateFloatingBallState',
                     enabled: settings.enableFloatingBall
                 });
@@ -160,7 +164,7 @@ async function saveSettings() {
 // 重置设置
 async function resetSettings() {
     try {
-        await chrome.storage.sync.remove('settings');
+        await browser.storage.sync.remove('settings');
         const settings = { ...defaultSettings };
         
         // 更新UI

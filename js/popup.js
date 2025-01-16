@@ -7,21 +7,8 @@ import { checkSummaryState, initializeSummaryListeners, handleSummaryResponse } 
 document.addEventListener('DOMContentLoaded', async function() {
     try {
         // 检查是否是通过通知点击打开的
-        const result = await browser.storage.local.get(['notificationClicked', 'notificationTabId']);
-        if (result.notificationClicked) {
-            // 检查当前标签页是否匹配
-            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-            if (tab && tab.id === result.notificationTabId) {
-                // 清除标记
-                await browser.storage.local.remove(['notificationClicked', 'notificationTabId']);
-                // 切换到快捷记录页面
-                const quicknoteTab = document.querySelector('.tablinks[data-tab="quicknote"]');
-                if (quicknoteTab) {
-                    quicknoteTab.click();
-                }
-            }
-        }
-
+        const result = await browser.storage.local.get(['notificationClicked', 'notificationTabId', 'quickNote']);
+        
         // 加载设置
         await loadSettings();
         
@@ -31,8 +18,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 加载快捷记录内容
         await loadQuickNote();
 
-        // 显示常用页面
-        document.getElementById('common').style.display = 'block';
+        // 决定显示哪个标签页
+        let defaultTab = 'common';
+        if (result.notificationClicked) {
+            // 检查当前标签页是否匹配
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+            if (tab && tab.id === result.notificationTabId) {
+                // 清除标记
+                await browser.storage.local.remove(['notificationClicked', 'notificationTabId']);
+                defaultTab = 'quicknote';
+            }
+        } else if (result.quickNote && result.quickNote.trim()) {
+            // 如果快捷记录有内容，显示快捷记录标签页
+            defaultTab = 'quicknote';
+        }
+
+        // 隐藏所有标签页内容
+        document.querySelectorAll('.tabcontent').forEach(content => {
+            content.style.display = 'none';
+        });
+
+        // 移除所有标签的激活状态
+        document.querySelectorAll('.tablinks').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        // 显示默认标签页并激活对应的标签
+        document.getElementById(defaultTab).style.display = 'block';
+        document.querySelector(`.tablinks[data-tab="${defaultTab}"]`).classList.add('active');
 
         // 初始化所有事件监听器
         initializeUIListeners();

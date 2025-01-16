@@ -49,6 +49,19 @@ async function sendQuickNote() {
 
         showStatus('正在发送...', 'loading');
 
+        // 获取当前标签页信息
+        let url = '';
+        let title = '';
+        try {
+            const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+            if (tab) {
+                url = tab.url;
+                title = tab.title;
+            }
+        } catch (error) {
+            console.error('获取当前标签页信息失败:', error);
+        }
+
         // 发送消息并等待saveSummaryResponse
         const responsePromise = new Promise((resolve) => {
             const listener = (message) => {
@@ -63,7 +76,9 @@ async function sendQuickNote() {
             browser.runtime.sendMessage({
                 action: 'saveSummary',
                 type: 'quickNote',
-                content: content.trim()
+                content: content.trim(),
+                url: url,
+                title: title
             });
         });
 
