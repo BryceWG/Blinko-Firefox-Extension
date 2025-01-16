@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <style>
         body {
-            width: 380px;
+            width: 480px;
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -336,22 +336,14 @@
 <body>
     <img src="images/banner.png" alt="Banner" class="banner">
     <div class="tab">
-        <button class="tablinks active" data-tab="main">主页</button>
+        <button class="tablinks active" data-tab="common">常用</button>
+        <button class="tablinks" data-tab="quicknote">快捷记录</button>
         <button class="tablinks" data-tab="settings">设置</button>
     </div>
 
     <div id="status"></div>
 
-    <div id="main" class="tabcontent" style="display: block;">
-        <div class="function-section">
-            <div class="function-title">快捷记录</div>
-            <textarea id="quickNoteInput" class="text-input" placeholder="在此输入笔记内容..."></textarea>
-            <div class="button-group">
-                <button id="sendQuickNote" class="send-button">发送</button>
-                <button id="clearQuickNote" class="clear-button">清除</button>
-            </div>
-        </div>
-
+    <div id="common" class="tabcontent" style="display: block;">
         <div class="function-section">
             <div class="function-title">网页总结</div>
             <button id="extract" class="extract-button">提取并总结页面内容</button>
@@ -372,6 +364,17 @@
             <div class="preview-actions">
                 <button id="cancelEdit" class="clear-button">取消</button>
                 <button id="editSummary" class="send-button">修改并保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="quicknote" class="tabcontent">
+        <div class="function-section">
+            <div class="function-title">快捷记录</div>
+            <textarea id="quickNoteInput" class="text-input" placeholder="在此输入笔记内容，或通过右键菜单收集网页内容..."></textarea>
+            <div class="button-group">
+                <button id="sendQuickNote" class="send-button">发送</button>
+                <button id="clearQuickNote" class="clear-button">清除</button>
             </div>
         </div>
     </div>
